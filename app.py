@@ -15,7 +15,7 @@ st.set_page_config(page_title="AQI Data Analyzer", layout="wide")
 
 # API Endpoint
 BASE_URL = "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69"
-API_KEY = "579b464db66ec23bdd000001586fe5bfeda64e5c55d27328dcc242a8"git a
+API_KEY = "579b464db66ec23bdd000001586fe5bfeda64e5c55d27328dcc242a8"
 
 def fetch_aqi_data(country="India", state="Delhi", city="Delhi", limit=10000):
     """

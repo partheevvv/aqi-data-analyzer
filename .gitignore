@@ -1,0 +1,17 @@
+# Virtual Environment
+venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Other common files to ignore
+.DS_Store
+.env
+.vscode/

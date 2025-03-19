@@ -4,18 +4,34 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import google.generativeai as genai
 import io
 import base64
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 
+plt.style.use('dark_background')
+sns.set_theme(style="dark")
+
+sns.set_theme(style="darkgrid")
+
 # Set page configuration
 st.set_page_config(page_title="AQI Data Analyzer", layout="wide")
 
-# API Endpoint
+# API Endpoints
 BASE_URL = "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69"
 API_KEY = "579b464db66ec23bdd000001586fe5bfeda64e5c55d27328dcc242a8"
+
+# Configure Gemini
+GEMINI_MODEL_NAME = "gemini-1.5-pro"
+
+def configure_gemini():
+    """Configure Gemini API with secrets"""
+    try:
+        genai.configure(api_key="AIzaSyCGkOX2-g8Iw7Q3R5u5bOZ3DHAmV-52tus")
+    except:
+        st.error("Gemini API key not configured. AI features disabled.")
 
 def fetch_aqi_data(country="India", state="Delhi", city="Delhi", limit=10000):
     """
@@ -28,7 +44,7 @@ def fetch_aqi_data(country="India", state="Delhi", city="Delhi", limit=10000):
         'limit': limit,
         'filters[country]': country,
         'filters[state]': state,
-        'filters[city]': city  # Add city filter parameter
+        'filters[city]': city
     }
 
     response = requests.get(BASE_URL, params=params)
@@ -57,6 +73,62 @@ def parse_aqi_data(raw_data):
     df.drop_duplicates(inplace=True)
 
     return df
+
+def generate_ai_insights(df, city, state):
+    """Generates AI-powered insights using Gemini"""
+    st.subheader("🤖 AI-Powered Air Quality Recommendations")
+    
+    # Prepare data summary
+    pollutant_stats = df.groupby('pollutant_id')['avg_value'].agg(['mean', 'max'])
+    dominant_pollutant = pollutant_stats['mean'].idxmax()
+    avg_aqi = df['avg_value'].mean()
+    max_aqi = df['avg_value'].max()
+    
+    # Construct prompt
+    prompt = f"""Act as a seasoned environmental scientist specializing in air quality analysis. You have been provided with the following data for {city}, {state}:
+
+    Data Summary:
+
+    Dominant Pollutant: {dominant_pollutant}
+    Average AQI: {avg_aqi:.1f}
+    Maximum AQI: {max_aqi:.1f}
+    Top 3 Pollutants: {', '.join(pollutant_stats.nlargest(3, 'mean').index.tolist())}
+    Based on this data, perform a comprehensive analysis and provide actionable recommendations. Organize your output into the following sections:
+    
+    Immediate Actions:
+    List 3-5 specific, actionable bullet points for short-term measures to immediately reduce the impact of {dominant_pollutant}.
+    Long-term Solutions:
+    Outline strategic and sustainable approaches for improving air quality over time.
+    Health Advisories:
+    Offer clear guidance to protect public health, especially for sensitive populations.
+    Policy Recommendations:
+    Propose targeted policy changes or regulatory interventions that local authorities can implement.
+    Community Initiatives:
+    Suggest community-based projects or public awareness campaigns to promote cleaner air.
+    Additional Guidance:
+    
+    Emphasize strategies for reducing {dominant_pollutant} throughout your recommendations.
+    Use technical language where appropriate but ensure that explanations are clear and accessible for non-specialists.
+    Reference established environmental practices or guidelines where relevant."""
+    
+    # Generate response
+    try:
+        model = genai.GenerativeModel(GEMINI_MODEL_NAME)
+        response = model.generate_content(prompt)
+        
+        with st.expander("View Detailed Recommendations"):
+            st.markdown(response.text)
+            
+        st.success("AI-generated recommendations ready!")
+        
+    except Exception as e:
+        st.error(f"Failed to generate insights: {str(e)}")
+        st.info("Here are some general recommendations:")
+        st.markdown("""
+        - Avoid outdoor activities during peak pollution hours
+        - Use public transportation whenever possible
+        - Support green infrastructure initiatives
+        """)
 
 def perform_eda(df):
     """Performs exploratory data analysis with visualizations."""
@@ -181,79 +253,54 @@ def visualize_results(model, X_test, y_test):
         ax.set_ylabel("Predicted Values")
         ax.set_title("Actual vs Predicted Pollutant Values")
         st.pyplot(fig)
+        
 
 def main():
+    # Initialize Gemini
+    configure_gemini()
+    
     # App title and description
-    st.title("Air Quality Index (AQI) Data Analyzer")
+    st.title("🌍 Smart AQI Analyzer with AI Insights")
     st.markdown("""
-    This application allows you to fetch and analyze Air Quality Index (AQI) data for different cities in India.
-    Enter a state and city to retrieve the data and generate visualizations and predictive models.
+    This application analyzes air quality data and provides AI-powered recommendations for improvement.
     """)
     
     # Sidebar inputs
     st.sidebar.header("Input Parameters")
-    
-    # State input (with default)
     state = st.sidebar.text_input("State", "Delhi")
-    
-    # City input (with default)
     city = st.sidebar.text_input("City", "Delhi")
-    
-    # Limit for API records
     limit = st.sidebar.slider("Max Records to Fetch", 1000, 10000, 5000, 1000)
-    
-    # Submit button
     submit_button = st.sidebar.button("Analyze AQI Data")
     
     if submit_button:
         try:
-            # Show loading message
             with st.spinner(f"Fetching AQI data for {city}, {state}..."):
-                # 1. Fetch data
-                raw_data = fetch_aqi_data(
-                    country="India",
-                    state=state,
-                    city=city,
-                    limit=limit
-                )
-            
-            # 2. Parse the city-specific data
-            try:
+                raw_data = fetch_aqi_data(state=state, city=city, limit=limit)
                 df = parse_aqi_data(raw_data)
-                st.success(f"Successfully retrieved {len(df)} records for {city}, {state}")
                 
-                # 3. Perform EDA
-                perform_eda(df)
-                
-                # 4. Train model
-                model, X_test, y_test = train_model(df)
-                
-                # 5. Visualize results
-                visualize_results(model, X_test, y_test)
-                
-                # 6. Provide download option for the data
-                st.subheader("Download Data")
-                csv = df.to_csv(index=False)
-                b64 = base64.b64encode(csv.encode()).decode()
-                href = f'<a href="data:file/csv;base64,{b64}" download="{city}_{state}_aqi_data.csv">Download CSV File</a>'
-                st.markdown(href, unsafe_allow_html=True)
-                
-            except ValueError as e:
-                st.error(f"Error: {e}")
-                st.info("Try a different state or city name, or check API availability.")
-                
+            st.success(f"Successfully retrieved {len(df)} records for {city}, {state}")
+            
+            # Display sections
+            perform_eda(df)
+            generate_ai_insights(df, city, state)
+            model, X_test, y_test = train_model(df)
+            visualize_results(model, X_test, y_test)
+            
+            # Download option
+            st.subheader("Download Data")
+            csv = df.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()
+            href = f'<a href="data:file/csv;base64,{b64}" download="{city}_{state}_aqi_data.csv">Download CSV File</a>'
+            st.markdown(href, unsafe_allow_html=True)
+            
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-            st.info("Please check your internet connection and try again.")
+            st.info("Please check your inputs and try again.")
     
-    # Show a message if the app is just loaded without submission
     else:
         st.info("Enter state and city names, then click 'Analyze AQI Data' to begin analysis.")
-        
-        # Provide some example cities that work with the API
         st.markdown("""
         ### Example Locations
-        Try these locations that are known to have data in the API:
         - Delhi, Delhi
         - Mumbai, Maharashtra
         - Kolkata, West Bengal

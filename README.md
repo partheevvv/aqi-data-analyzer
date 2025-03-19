@@ -2,8 +2,6 @@
 
 A Streamlit web application that fetches, analyzes, and visualizes Air Quality Index (AQI) data for cities in India. The application allows users to select a state and city, then generates data visualizations and trains a machine learning model to predict AQI values.
 
-![AQI Data Analyzer Screenshot](https://raw.githubusercontent.com/user/aqi_app/main/screenshot.png)
-
 ## Features
 
 - **Data Retrieval**: Fetch AQI data from the Indian government's official API

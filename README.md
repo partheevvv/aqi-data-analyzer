@@ -14,6 +14,8 @@ A Streamlit web application that fetches, analyzes, and visualizes Air Quality I
   - Random Forest Regressor to predict average pollutant values
   - Model performance metrics and visualization
 - **Data Export**: Download analyzed data as CSV files
+- **Integration of LLM**:
+  - Proccessing the prediction and the data with the help of a llm for better understanding for end users
 
 ## Installation
 

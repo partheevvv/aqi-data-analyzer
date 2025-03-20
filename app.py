@@ -258,6 +258,42 @@ def visualize_results(model, X_test, y_test):
 def main():
     # Initialize Gemini
     configure_gemini()
+
+    st.markdown("""
+    <style>
+    /* Main background color */
+    .stApp {
+        background: #272757;
+        color: #ffffff;
+    }
+    
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background: #8686AC  !important;
+    }
+    
+    /* Sidebar header text */
+    [data-testid="stSidebar"] h1 {
+        color: #e94560 !important;
+    }
+    
+    /* Input fields */
+    .stTextInput input, .stSlider {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border-color: #2d4263 !important;
+    }
+    
+    /* Button styling */
+    .stButton>button {
+        background: #272757 !important;
+        border: none !important;
+        color: white !important;
+        border-radius: 8px !important;
+    }
+    
+    </style>
+    """, unsafe_allow_html=True)
     
     # App title and description
     st.title("🌍 Smart AQI Analyzer with AI Insights")
@@ -269,14 +305,14 @@ def main():
     st.sidebar.header("Input Parameters")
     state = st.sidebar.text_input("State", "Delhi")
     city = st.sidebar.text_input("City", "Delhi")
-    limit = st.sidebar.slider("Max Records to Fetch", 1000, 10000, 5000, 1000)
     submit_button = st.sidebar.button("Analyze AQI Data")
     
     if submit_button:
         try:
             with st.spinner(f"Fetching AQI data for {city}, {state}..."):
-                raw_data = fetch_aqi_data(state=state, city=city, limit=limit)
-                df = parse_aqi_data(raw_data)
+               # Set default limit to 5000 (previous slider's default)
+               raw_data = fetch_aqi_data(state=state, city=city, limit=5000)
+               df = parse_aqi_data(raw_data)
                 
             st.success(f"Successfully retrieved {len(df)} records for {city}, {state}")
             

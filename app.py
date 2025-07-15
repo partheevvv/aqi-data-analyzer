@@ -21,7 +21,7 @@ st.set_page_config(page_title="AQI Data Analyzer", layout="wide")
 
 # API Endpoints
 BASE_URL = "https://api.data.gov.in/resource/3b01bcb8-0b14-4abf-b6f2-c1bfd384ba69"
-API_KEY = "579b464db66ec23bdd000001586fe5bfeda64e5c55d27328dcc242a8"
+API_KEY = "API_DATA_GOV"
 
 # Configure Gemini
 GEMINI_MODEL_NAME = "gemini-1.5-pro"
@@ -29,7 +29,7 @@ GEMINI_MODEL_NAME = "gemini-1.5-pro"
 def configure_gemini():
     """Configure Gemini API with secrets"""
     try:
-        genai.configure(api_key="AIzaSyCGkOX2-g8Iw7Q3R5u5bOZ3DHAmV-52tus")
+        genai.configure(api_key="GEMINI_API_KEY")
     except:
         st.error("Gemini API key not configured. AI features disabled.")
 
